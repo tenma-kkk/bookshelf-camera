@@ -110,6 +110,50 @@ input[type=range]{width:100%;accent-color:var(--yellow)}
 .sheetTxt{display:flex;flex-direction:column;gap:12px;min-width:0}
 .badge{align-self:flex-start;font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;background:#2a2c26}
 .badge.unk{background:var(--yellow);color:#1b1a12}
+/* ---------- アプリの本棚（~/bookshelf/mock.html の見た目に合わせる） ---------- */
+#app{position:fixed;inset:0;z-index:25;overflow-y:auto;background:#d8cfc3;color:#3a2e24;font-family:"Hiragino Sans","Noto Sans JP",sans-serif;color-scheme:light}
+#app .aphone{max-width:420px;min-height:100%;margin:0 auto;background:#f3ede4;padding:calc(env(safe-area-inset-top,0px) + 14px) 12px calc(env(safe-area-inset-bottom,0px) + 90px)}
+#app .ahd{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 4px 6px}
+#app h1{font-size:18px;letter-spacing:0}
+#app .asub{font-size:11px;color:#8a7a6a}
+#app .abtn{border:none;border-radius:20px;padding:7px 12px;font-size:12px;min-height:36px;background:#fffaf3;color:#3a2e24;box-shadow:0 1px 3px #0002}
+#app .anote{font-size:11px;color:#8a7a6a;border:1px dashed #e4d8c8;border-radius:8px;padding:6px 8px;margin:4px 0 10px;line-height:1.5}
+#app .aseg{display:inline-flex;background:#fff;border-radius:20px;padding:2px;box-shadow:0 1px 3px #0002;margin-bottom:8px}
+#app .aseg button{border:none;background:none;padding:5px 10px;font-size:12px;border-radius:18px;min-height:32px;color:#8a7a6a}
+#app .aseg button.on{background:#3a2e24;color:#fff}
+#app .scrollwrap{overflow-x:auto;padding-bottom:4px}
+#app .room{margin:0 auto;position:relative;border-radius:6px;overflow:hidden;box-shadow:inset 0 0 40px #0002;background:#efe9df radial-gradient(#0000000b 1px,transparent 1.5px) 0 0/7px 7px}
+#app .wallzone{position:relative}
+#app .window{position:absolute;border:5px solid #f8f6f1;background:linear-gradient(#9ccbec,#e3f0f9 70%,#cfe3c4);box-shadow:0 2px 6px #0003}
+#app .window::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:4px;margin-left:-2px;background:#f8f6f1}
+#app .window::after{content:"";position:absolute;top:50%;left:0;right:0;height:4px;margin-top:-2px;background:#f8f6f1}
+#app .tops{position:absolute;bottom:0;line-height:1;filter:drop-shadow(2px 3px 2px #0004)}
+#app .case{background:var(--frame);padding:0 var(--fw);border-radius:2px;box-shadow:0 8px 16px #0004;margin:0 auto}
+#app .topb{height:calc(var(--fw) * 1.3);background:var(--frame);border-bottom:1px solid #0001}
+#app .inner{background:var(--inner);box-shadow:inset 0 0 18px #0003}
+#app .plinth{height:calc(var(--fw) * 2);background:var(--frame);border-top:1px solid #0001}
+#app .arow{display:flex;align-items:flex-end;border-bottom:var(--bh) solid var(--board);box-shadow:0 3px 0 var(--edge),inset 0 16px 16px -12px #00000066;margin-bottom:3px}
+#app .arow:last-child{margin-bottom:0}
+#app .floor{background:repeating-linear-gradient(0deg,#b07a45 0 9px,#93602f 9px 10px);box-shadow:inset 0 10px 14px -8px #0006}
+#app .aspine{flex:0 0 auto;position:relative;margin-right:.4px;border-radius:2px 3px 0 0;overflow:hidden;cursor:pointer;box-shadow:2px 0 3px #00000045;transition:transform .12s}
+#app .aspine canvas{display:block;width:100%;height:100%}
+#app .aspine::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#00000033,#ffffff24 28%,#ffffff00 55%,#0000002e);box-shadow:inset -3px 0 4px #0000004d,inset 3px 0 3px #ffffff38;pointer-events:none}
+#app .aspine:active{transform:translateY(-6px)}
+#app .aspine .kari{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);z-index:1;background:#fffaf3;color:#b4553d;font-size:9px;font-weight:700;border-radius:3px;padding:0 2px;line-height:1.4}
+#app .dims{font-size:11px;color:#8a7a6a;text-align:center;margin-top:8px}
+#app .anav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;display:flex;background:#fffaf3;border-top:1px solid #e4d8c8;padding-bottom:env(safe-area-inset-bottom,0px)}
+#app .anav span{flex:1;text-align:center;padding:8px 0 10px;font-size:10px;color:#8a7a6a}
+#app .anav span i{font-style:normal;font-size:20px;display:block}
+#app .anav span.on{color:#b4553d;font-weight:700}
+#aCard{position:fixed;inset:0;z-index:35;background:#0008;display:flex;align-items:center;justify-content:center;padding:16px;color:#3a2e24;font-family:"Hiragino Sans","Noto Sans JP",sans-serif}
+#aCard .acard{background:#fffaf3;border-radius:14px;padding:18px;width:100%;max-width:360px;max-height:92vh;overflow-y:auto;text-align:center}
+#aCv{display:block;margin:0 auto 12px;height:min(38vh,260px);width:auto;box-shadow:6px 6px 14px #0005;border-radius:2px}
+#aCard h2{font-size:16px;margin:0 0 4px}
+#aCard .ameta{font-size:12px;color:#8a7a6a;margin-bottom:10px;line-height:1.6}
+#aCard .rec{text-align:left;background:#fff;border-radius:10px;padding:10px;margin-bottom:12px;font-size:11px;color:#8a7a6a}
+#aCard .rec b{display:block;color:#3a2e24;font-size:13px;margin-bottom:6px}
+#aCard .rec div{border:1px solid #e4d8c8;border-radius:8px;padding:7px 8px;margin:3px 0 8px;color:#bbb}
+#aCard button{border:none;border-radius:20px;padding:11px;width:100%;font-size:14px;background:#3a2e24;color:#fff;min-height:44px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -206,6 +250,21 @@ input[type=range]{width:100%;accent-color:var(--yellow)}
   </div>
 </div></div>
 
+<section id="app" hidden><div class="aphone">
+  <div class="ahd"><div><h1>No.1 の本棚</h1><div class="asub" id="aSub"></div></div><button type="button" class="abtn" id="aBack">撮影にもどる</button></div>
+  <div class="anote">※仮の画面です。いま撮った背表紙が、アプリの本棚にこう入ります。本をタップすると中身が見られます。</div>
+  <div class="aseg"><button type="button" id="aFar" class="on">全体を眺める</button><button type="button" id="aNear">近くで見る</button></div>
+  <div id="aBody"></div>
+  <div class="anav" aria-hidden="true"><span class="on"><i>📚</i>わたしの本棚</span><span><i>➕</i>本を追加</span><span><i>🔍</i>持ってる？</span><span><i>♡</i>ほしい本</span><span><i>⚙️</i>設定</span></div>
+</div></section>
+<div id="aCard" hidden><div class="acard" role="dialog" aria-modal="true" aria-labelledby="aTitle">
+  <canvas id="aCv"></canvas>
+  <h2 id="aTitle"></h2>
+  <p class="ameta" id="aMeta"></p>
+  <div class="rec"><b>わたしの記録</b>買った日<div>例：2024年4月</div>買った場所<div>例：駅前の本屋</div>メモ<div>この本の思い出など</div></div>
+  <button type="button" id="aClose">閉じる</button>
+</div></div>
+
 <input type="file" id="fCap" accept="image/*" capture="environment" hidden>
 <input type="file" id="fBook" accept="image/*" capture="environment" hidden>
 
@@ -215,7 +274,7 @@ const ROW_W=560, PXMM=4, MAXSRC=3200;
 // phase: 'all'（本棚全体）→ 'row'（1段ずつ）→ 'done'
 const S={phase:'all',rowsTotal:5,rows:[],colors:null,src:null,srcData:null,quad:null,cur:null,whole:null,noLive:false};
 
-function show(id){for(const s of ['home','cam','adj','res','fin'])$('#'+s).hidden=s!==id;window.scrollTo(0,0)}
+function show(id){for(const s of ['home','cam','adj','res','fin','app'])$('#'+s).hidden=s!==id;window.scrollTo(0,0)}
 function aspect(){return S.phase==='all'?0.62:ROW_W/236}
 const nextRow=()=>S.rows.length+1;
 
@@ -565,13 +624,70 @@ $('#fBook').onchange=e=>{
   $('#sheet').hidden=true;showFinish();
   $('#finHint').textContent='撮った写真から、本が見つかりました（試作なので、まねごとです）。';
 };
-$('#finOk').onclick=()=>{
-  const all=S.rows.flatMap(r=>r.info),ng=all.filter(x=>x.unk).length;
-  $('#finTitle').textContent='本棚ができました';
-  $('#finInfo').textContent=`${S.rowsTotal}段・${all.length}冊。`+(ng?`「仮」の${ng}冊は、あとからタップして撮れば入れ替わります。`:'')+'本番ではこのあと、アプリの本棚（部屋に置く・本の記録をつける など）に入ります。';
-  $('#tally').hidden=true;$('#finBtns').hidden=true;$('#finHint').textContent='';
-  window.scrollTo(0,0);
-};
+$('#finOk').onclick=()=>{cutAll();appZoom='far';renderApp();show('app');$('#app').scrollTop=0};
+$('#aBack').onclick=()=>show('fin');
+
+/* ---------- アプリの本棚：段の写真から1冊ずつ切り抜いて、本物の高さの背表紙にする ---------- */
+// 段の上のほう（本の上のすき間）の色を「棚の中の色」として、そこから色が変わる所を本の上の端とみなす
+function cutAll(){
+  for(const r of S.rows){
+    const W=r.src.width,H=r.src.height,d=r.src.getContext('2d').getImageData(0,0,W,H).data;
+    const px=(x,y)=>{const i=(y*W+x)*4;return [d[i],d[i+1],d[i+2]]};
+    const med=a=>a.sort((p,q)=>p-q)[a.length>>1],R=[],G=[],B=[];
+    for(let y=Math.round(H*.02);y<H*.06;y+=2)for(let x=0;x<W;x+=6){const c=px(x,y);R.push(c[0]);G.push(c[1]);B.push(c[2])}
+    const bg=[med(R),med(G),med(B)],far=c=>Math.abs(c[0]-bg[0])+Math.abs(c[1]-bg[1])+Math.abs(c[2]-bg[2])>70;
+    r.cut=r.books.map(([a,b])=>{
+      const x0=Math.round(a+(b-a)*.2),x1=Math.max(x0+1,Math.round(b-(b-a)*.2));let run=0,top=H;
+      for(let y=0;y<H;y+=2){let n=0,c=0;for(let x=x0;x<x1;x+=2){if(far(px(x,y)))n++;c++}
+        if(n/c>.6){if(++run>=3){top=y-4;break}}else run=0}
+      return {top:Math.max(0,top),empty:top>H*.8};
+    });
+  }
+}
+let appZoom='far';
+$('#aFar').onclick=()=>{appZoom='far';renderApp()};
+$('#aNear').onclick=()=>{appZoom='near';renderApp()};
+function renderApp(){
+  $('#aFar').classList.toggle('on',appZoom==='far');$('#aNear').classList.toggle('on',appZoom==='near');
+  const body=$('#aBody');body.innerHTML='';
+  const avail=Math.min(420,innerWidth)-24-4,s=appZoom==='near'?1.6:(avail-36)/(ROW_W*1.06);
+  const fw=Math.max(5,ROW_W*.03*s),caseW=ROW_W*s+fw*2,pad=Math.max(18,34*s),roomW=caseW+pad*2,wzh=40+70*s;
+  const col=S.colors||{frame:'#f7f6f2',inner:'#f2cf1d'};
+  const wrap=document.createElement('div');wrap.className='scrollwrap';
+  wrap.innerHTML=`<div class="room" style="width:${roomW}px"><div class="wallzone" style="height:${wzh}px">
+    <div class="window" style="left:${pad+caseW*.06}px;top:${wzh*.12}px;width:${Math.min(caseW*.32,60+40*s)}px;height:${wzh*.8}px"></div>
+    <div class="tops" style="right:${pad+fw+8}px;font-size:${18+20*s}px">🪴</div></div>
+    <div class="case" style="--frame:${col.frame};--inner:${col.inner};--board:${col.inner};--edge:#ffffff55;--fw:${fw}px;--bh:${Math.max(4,18*s)}px;width:${caseW}px"><div class="topb"></div><div class="inner"></div><div class="plinth"></div></div>
+    <div class="floor" style="height:${18+30*s}px"></div></div>`;
+  const inner=wrap.querySelector('.inner');let nBooks=0;
+  S.rows.forEach((r,ri)=>{
+    const row=document.createElement('div');row.className='arow';row.style.height=(r.hmm*s)+'px';
+    r.books.forEach(([a,b],j)=>{
+      const cut=r.cut[j];if(cut.empty)return;nBooks++;
+      const H=r.src.height,sp=document.createElement('div');sp.className='aspine';sp.dataset.r=ri;sp.dataset.j=j;
+      sp.style.width=((b-a)/PXMM*s)+'px';sp.style.height=((H-cut.top)/PXMM*s)+'px';
+      const k=Math.min(1,(s*2)/PXMM),c=document.createElement('canvas');c.width=Math.max(1,Math.round((b-a)*k));c.height=Math.max(1,Math.round((H-cut.top)*k));
+      c.getContext('2d').drawImage(r.src,a,cut.top,b-a,H-cut.top,0,0,c.width,c.height);sp.appendChild(c);
+      if(r.info[j].unk)sp.insertAdjacentHTML('beforeend','<span class="kari">仮</span>');
+      row.appendChild(sp);
+    });
+    inner.appendChild(row);
+  });
+  body.appendChild(wrap);
+  body.insertAdjacentHTML('beforeend',`<div class="dims">↔ 本棚の幅 ${ROW_W/10}cm ・ 写真から作った背表紙です</div>`);
+  $('#aSub').textContent=`${nBooks}冊 ・ ${S.rows.length}段`;
+}
+$('#aBody').addEventListener('click',e=>{
+  const sp=e.target.closest('.aspine');if(!sp)return;
+  const r=S.rows[+sp.dataset.r],j=+sp.dataset.j,[a,b]=r.books[j],cut=r.cut[j],H=r.src.height,c=$('#aCv');
+  c.width=b-a;c.height=H-cut.top;c.getContext('2d').drawImage(r.src,a,cut.top,b-a,H-cut.top,0,0,b-a,H-cut.top);
+  const unk=r.info[j].unk;
+  $('#aTitle').textContent=unk?'仮の本（まだ何の本かわかっていません）':'（本の名前）';
+  $('#aMeta').textContent=`${+sp.dataset.r+1}段目・左から${j+1}冊目 ・ 高さ 約${((H-cut.top)/PXMM/10).toFixed(1)}cm ・ 厚さ 約${((b-a)/PXMM/10).toFixed(1)}cm`+(unk?'':'。本番では本の名前・作者・表紙が出ます');
+  $('#aCard').hidden=false;
+});
+$('#aClose').onclick=()=>{$('#aCard').hidden=true};
+$('#aCard').addEventListener('click',e=>{if(e.target.id==='aCard')$('#aCard').hidden=true});
 renderHome();
 </script>
 </body>
