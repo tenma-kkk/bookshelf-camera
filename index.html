@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+</head>
+<body>
+<title>背表紙カメラ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+/* 暗い撮影ツール。アクセントはしょーたさんの本棚の中の黄色 */
+:root{
+  --ink:#121311; --panel:#1c1e1a; --line:#383b34; --fg:#f1efe7; --mute:#a5a79d;
+  --yellow:#F2CF1D; --ok:#43c06d; --ng:#e8584f;
+  --sans:'Noto Sans JP',system-ui,-apple-system,'Hiragino Sans',sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--ink);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.7}
+.wrap{max-width:720px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+h1{font-size:24px;margin:0;letter-spacing:.04em}
+h2{font-size:17px;margin:0}
+p{margin:0}
+.mute{color:var(--mute);font-size:13px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+button{font:inherit;color:inherit;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:12px 14px;cursor:pointer;min-height:48px}
+button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+button.main{background:var(--yellow);color:#1b1a12;border-color:var(--yellow);font-weight:700;font-size:17px;min-height:56px}
+.btns{display:flex;flex-direction:column;gap:8px}
+.note{color:var(--yellow);font-size:13px}
+.steps{display:flex;gap:6px;flex-wrap:wrap;font-size:12px}
+.steps span{padding:2px 10px;border-radius:999px;border:1px solid var(--line);color:var(--mute)}
+.steps span.on{border-color:var(--yellow);color:var(--yellow);font-weight:700}
+.steps span.done{background:#2a2c26;color:var(--fg)}
+
+/* カメラ */
+#cam{position:fixed;inset:0;background:#000;z-index:20}
+#video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#ov{position:absolute;inset:0;width:100%;height:100%}
+.brk{fill:none;stroke-width:5;stroke-linecap:round;stroke:#fff;transition:stroke .2s}
+#cam.ready .brk{stroke:var(--ok)}
+#cam.tilted .brk{stroke:var(--ng)}
+.camtop{position:absolute;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top,0px) + 12px) max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+#camStep{font-size:12px;color:var(--yellow);background:rgba(0,0,0,.55);padding:2px 12px;border-radius:999px;font-weight:700}
+#msg{background:rgba(0,0,0,.6);padding:6px 14px;border-radius:999px;font-weight:700}
+#rotHint{font-size:12px;color:#ddd;background:rgba(0,0,0,.45);padding:2px 10px;border-radius:999px}
+.level{position:absolute;right:max(16px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 100px);width:64px;height:64px;border-radius:50%;border:2px solid rgba(255,255,255,.7);background:rgba(0,0,0,.35)}
+.level::before{content:"";position:absolute;left:50%;top:50%;width:20px;height:20px;margin:-10px;border-radius:50%;border:1px dashed rgba(255,255,255,.6)}
+#bubble{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px;border-radius:50%;background:var(--ng)}
+#cam.level-ok #bubble{background:var(--ok)}
+#levelTxt{position:absolute;top:68px;left:-20px;right:-20px;text-align:center;font-size:11px;color:#eee;font-variant-numeric:tabular-nums}
+.cambot{position:absolute;left:0;right:0;bottom:0;padding:0 max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 16px) max(16px,env(safe-area-inset-left,0px));display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
+.cambot button{background:rgba(0,0,0,.55);border-color:rgba(255,255,255,.3);font-size:13px;min-height:44px;padding:8px 10px;justify-self:start}
+#shutter{width:72px;height:72px;border-radius:50%;background:#fff;border:5px solid rgba(255,255,255,.4);background-clip:padding-box;padding:0;position:relative}
+#holdRing{position:absolute;inset:-5px}
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:40;transition:opacity .35s}
+
+/* カメラが使えないときだけ出る、四すみ合わせ */
+#adj{position:fixed;inset:0;background:var(--ink);z-index:20;display:flex;flex-direction:column}
+.adjtop{padding:calc(env(safe-area-inset-top,0px) + 10px) max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:2px}
+#stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;min-height:0;touch-action:none}
+#stageIn{position:relative}
+#adjCv{display:block}
+#adjSvg{position:absolute;inset:0;overflow:visible}
+#adjSvg polygon{fill:rgba(242,207,29,.08);stroke:var(--yellow);stroke-width:2}
+.hd{fill:rgba(242,207,29,.25);stroke:var(--yellow);stroke-width:2}
+.hit{fill:transparent;cursor:grab}
+#loupe{position:absolute;width:128px;height:128px;border-radius:50%;border:2px solid var(--yellow);pointer-events:none;top:8px;left:8px;background:#000}
+.adjbot{padding:8px max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(16px,env(safe-area-inset-left,0px));display:grid;gap:8px}
+
+/* 結果 */
+.zoomBox{overflow-x:auto;border-radius:8px;background:#000}
+.zoomBox.big .strip{width:300%}
+.strip{position:relative;width:100%}
+.strip canvas{display:block;width:100%;height:auto}
+.strip svg{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair}
+.strip line{stroke:var(--yellow);stroke-width:2;vector-effect:non-scaling-stroke}
+.row2{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.small{min-height:40px;padding:6px 12px;font-size:13px}
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper button{width:44px;min-height:44px;padding:0;font-size:20px}
+.stepper b{font-size:20px;font-variant-numeric:tabular-nums;min-width:3em;text-align:center}
+input[type=range]{width:100%;accent-color:var(--yellow)}
+.stats{font-variant-numeric:tabular-nums}
+
+/* アプリの本棚（わくの色・中の色は、全体の写真から読み取った色） */
+.shelf{--frame:#f4f2ec;--inner:#F2CF1D;background:var(--frame);padding:10px;border-radius:3px;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 24px rgba(0,0,0,.45)}
+.srow{position:relative;background:var(--inner);display:flex;align-items:flex-end;aspect-ratio:560/236;box-shadow:inset 0 10px 14px -8px rgba(0,0,0,.35)}
+.srow.next{outline:2px dashed var(--ok);outline-offset:-4px}
+.srow .lbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:rgba(0,0,0,.45);font-weight:700}
+.sp{position:relative;height:100%;flex:none;margin-right:1px}
+.sp canvas{display:block;width:100%;height:100%}
+.sp::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.22),rgba(255,255,255,.12) 30%,rgba(255,255,255,0) 60%,rgba(0,0,0,.2));pointer-events:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<main id="home" class="wrap">
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <h1>背表紙カメラ<span class="mute" style="font-size:13px;font-weight:400"> 試作</span></h1>
+    <div class="steps" id="steps"></div>
+  </div>
+
+  <div class="card">
+    <h2 id="homeHead"></h2>
+    <p id="homeText"></p>
+    <button type="button" class="main" id="goBtn"></button>
+    <p id="homeNote" class="note" role="status"></p>
+  </div>
+
+  <div class="card" id="homeShelfCard" hidden>
+    <h2>あなたの本棚</h2>
+    <div class="shelf" id="shelfHome"></div>
+  </div>
+
+  <p class="mute">写真はこのスマホの中だけで処理します。どこにも送らず、保存もしません。<br>コツ：正面から・明るい部屋で・手前に飛び出た本は奥へそろえる。</p>
+</main>
+
+<section id="cam" hidden>
+  <video id="video" playsinline muted autoplay></video>
+  <svg id="ov" aria-hidden="true"><path id="mask" fill="rgba(0,0,0,.55)" fill-rule="evenodd"/><g id="brks"></g></svg>
+  <div class="camtop"><span id="camStep"></span><span id="msg"></span><span id="rotHint" hidden>スマホを横向きにすると、大きくくっきり撮れます</span></div>
+  <div class="level" aria-hidden="true"><span id="bubble"></span><span id="levelTxt"></span></div>
+  <div class="cambot">
+    <button type="button" id="camBack">やめる</button>
+    <button type="button" id="shutter" aria-label="撮る"><svg id="holdRing" viewBox="0 0 72 72"><circle id="holdArc" cx="36" cy="36" r="34" fill="none" stroke="#43c06d" stroke-width="5" stroke-dasharray="0 214" transform="rotate(-90 36 36)"/></svg></button>
+    <span></span>
+  </div>
+</section>
+<div id="flash"></div>
+
+<section id="adj" hidden>
+  <div class="adjtop">
+    <strong id="adjTitle"></strong>
+    <span class="mute">このページではカメラ画面に枠を出せなかったため、撮った写真の上で合わせます。</span>
+  </div>
+  <div id="stage"><div id="stageIn"><canvas id="adjCv"></canvas><svg id="adjSvg"></svg></div><canvas id="loupe" width="128" height="128" hidden></canvas></div>
+  <div class="adjbot"><button type="button" class="main" id="adjGo">次へ</button></div>
+</section>
+
+<main id="res" class="wrap" hidden>
+  <div style="display:flex;flex-direction:column;gap:4px">
+    <h1 id="resTitle"></h1>
+    <p class="mute stats" id="resInfo"></p>
+  </div>
+
+  <div class="card" id="allTools" hidden>
+    <div class="zoomBox"><div class="strip"><canvas id="allCv"></canvas></div></div>
+    <div class="row2"><span>段の数</span><div class="stepper"><button type="button" id="rMinus" aria-label="1段へらす">−</button><b id="rCount"></b><button type="button" id="rPlus" aria-label="1段ふやす">＋</button></div></div>
+    <p class="mute">写真から数えた段の数です。ちがっていたら直してください。</p>
+    <h2>読み取った本棚</h2>
+    <div class="shelf" id="shelfPreview"></div>
+  </div>
+
+  <div class="card" id="rowTools" hidden>
+    <div class="row2"><h2>本と本の境目</h2><span class="stats" id="cnt"></span></div>
+    <div class="zoomBox" id="zoomBox"><div class="strip"><canvas id="resCv"></canvas><svg id="resSvg" preserveAspectRatio="none"></svg></div></div>
+    <p class="mute">黄色い線が自動で見つけた境目です。線のない所をタップすると増え、線の近くをタップすると消えます。</p>
+    <div class="row2"><button type="button" class="small" id="zoomBtn">拡大して見る</button></div>
+    <label for="sens" class="mute">見つける強さ（線が足りなければ右、多すぎたら左）</label>
+    <input type="range" id="sens" min="1" max="10" value="5">
+  </div>
+
+  <div class="btns">
+    <button type="button" class="main" id="okBtn"></button>
+    <button type="button" id="retakeBtn">撮り直す</button>
+  </div>
+</main>
+
+<input type="file" id="fCap" accept="image/*" capture="environment" hidden>
+
+<script>
+const $=s=>document.querySelector(s);
+const ROW_W=560, PXMM=4, MAXSRC=3200;
+// phase: 'all'（本棚全体）→ 'row'（1段ずつ）→ 'done'
+const S={phase:'all',rowsTotal:5,rows:[],colors:null,src:null,srcData:null,quad:null,cur:null,whole:null,noLive:false};
+
+function show(id){for(const s of ['home','cam','adj','res'])$('#'+s).hidden=s!==id;window.scrollTo(0,0)}
+function aspect(){return S.phase==='all'?0.62:ROW_W/236}
+const nextRow=()=>S.rows.length+1;
+
+/* ---------- ホーム（いまの段階と、次にやること） ---------- */
+function renderHome(){
+  const st=['本棚全体'];for(let i=1;i<=S.rowsTotal;i++)st.push(`${i}段目`);
+  const now=S.phase==='all'?0:S.phase==='row'?nextRow():st.length;
+  $('#steps').innerHTML=st.map((t,i)=>`<span class="${i<now?'done':i===now?'on':''}">${t}</span>`).join('');
+  if(S.phase==='all'){
+    $('#homeHead').textContent='まず、本棚全体を撮ります';
+    $('#homeText').textContent=S.noLive?'スマホのカメラが開きます。本棚全体を正面から撮ったあと、四すみを本棚の外側の角に合わせてください。':'本棚の外側のわくが、枠にぴったり入るように撮ってください。わくの色・中の色・段の数を読み取ります。';
+    $('#goBtn').textContent='本棚全体を撮る';$('#goBtn').hidden=false;
+  }else if(S.phase==='row'){
+    $('#homeHead').textContent=`${nextRow()}段目を撮ります`;
+    $('#homeText').textContent=S.noLive?'スマホを横向きにして、1段が画面いっぱいになるように正面から撮ってください。撮ったあと、四すみを段の内側の角に合わせます。':'スマホを横向きにして、棚板の上と下を枠の線に合わせてください。上の段から順に撮ります。';
+    $('#goBtn').textContent=`${nextRow()}段目を撮る`;$('#goBtn').hidden=false;
+  }else{
+    $('#homeHead').textContent='全部の段を撮り終えました';
+    $('#homeText').textContent='これが、写真から作ったあなたの本棚です。';
+    $('#goBtn').hidden=true;
+  }
+  $('#homeShelfCard').hidden=S.phase==='all';
+  if(S.phase!=='all')renderShelf('#shelfHome');
+}
+
+// claude.ai のページの中ではカメラ画面を出せないので、タップしたその場でスマホのカメラを開く
+const inFrame=(()=>{try{return window.self!==window.top}catch(e){return true}})();
+if(inFrame)S.noLive=true;
+const within=(p,ms)=>Promise.race([p,new Promise((_,ng)=>setTimeout(()=>ng(new Error('timeout')),ms))]);
+$('#goBtn').onclick=async()=>{
+  $('#homeNote').textContent='';
+  if(S.noLive){$('#fCap').click();return}
+  if(!(await startCam())){
+    S.noLive=true;$('#goBtn').textContent='スマホのカメラを開く';
+    $('#homeNote').textContent='このページではカメラ画面に枠を出せませんでした。ボタンをもう一度押すとスマホのカメラが開きます。撮ったあとに枠を合わせます。';
+  }
+};
+$('#fCap').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const im=await loadImg(f);setSource(im,im.naturalWidth,im.naturalHeight);openAdjust()}
+  catch(err){$('#homeNote').textContent='写真を読み込めませんでした。もう一度撮ってください。'}
+};
+function loadImg(f){return new Promise((ok,ng)=>{const u=URL.createObjectURL(f),im=new Image();im.onload=()=>ok(im);im.onerror=ng;im.src=u})}
+function setSource(drawable,w,h){
+  const k=Math.min(1,MAXSRC/Math.max(w,h));
+  const c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);
+  const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(drawable,0,0,c.width,c.height);
+  S.src=c;S.srcData=x.getImageData(0,0,c.width,c.height);
+  return k;
+}
+
+/* ---------- 枠つきカメラ ---------- */
+let stream=null,raf=0,tilt=null,holdStart=0,lastProbe=0,edgeOK=false;
+const probe=document.createElement('canvas'),pctx=probe.getContext('2d',{willReadFrequently:true});
+
+async function startCam(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return false;
+  try{if(typeof DeviceMotionEvent!=='undefined'&&DeviceMotionEvent.requestPermission)await within(DeviceMotionEvent.requestPermission(),4000)}catch(e){}
+  try{stream=await within(navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:3840},height:{ideal:2160}},audio:false}),6000)}
+  catch(e){return false}
+  const v=$('#video');v.srcObject=stream;try{await v.play()}catch(e){}
+  tilt=null;holdStart=0;
+  $('#camStep').textContent=S.phase==='all'?'本棚全体':`${nextRow()}段目 / ${S.rowsTotal}段`;
+  show('cam');window.addEventListener('devicemotion',onMotion);layoutFrame();raf=requestAnimationFrame(loop);
+  return true;
+}
+function stopCam(){cancelAnimationFrame(raf);window.removeEventListener('devicemotion',onMotion);if(stream)stream.getTracks().forEach(t=>t.stop());stream=null}
+$('#camBack').onclick=()=>{stopCam();renderHome();show('home')};
+$('#shutter').onclick=()=>capture();
+addEventListener('resize',()=>{if(!$('#cam').hidden)layoutFrame();if(!$('#adj').hidden)drawAdjust()});
+
+function frameRect(){
+  const cw=innerWidth,ch=innerHeight,a=aspect();
+  let fw=cw*.9,fh=fw/a;const maxH=ch*(S.phase==='all'?.68:.6);
+  if(fh>maxH){fh=maxH;fw=fh*a}
+  return {x:(cw-fw)/2,y:(ch-fh)/2,w:fw,h:fh};
+}
+function layoutFrame(){
+  const r=frameRect(),W=innerWidth,H=innerHeight,L=Math.min(28,r.w/5);
+  $('#ov').setAttribute('viewBox',`0 0 ${W} ${H}`);
+  $('#mask').setAttribute('d',`M0 0H${W}V${H}H0Z M${r.x} ${r.y}H${r.x+r.w}V${r.y+r.h}H${r.x}Z`);
+  const c=[[r.x,r.y,1,1],[r.x+r.w,r.y,-1,1],[r.x+r.w,r.y+r.h,-1,-1],[r.x,r.y+r.h,1,-1]];
+  $('#brks').innerHTML=c.map(([x,y,dx,dy])=>`<path class="brk" d="M${x} ${y+dy*L}V${y}H${x+dx*L}"/>`).join('')
+    +`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1"/>`;
+  $('#rotHint').hidden=!(S.phase==='row'&&H>W);
+}
+function onMotion(e){
+  const g=e.accelerationIncludingGravity;if(!g||g.x==null)return;
+  const n=Math.hypot(g.x,g.y,g.z)||1;
+  const pitch=Math.asin(Math.max(-1,Math.min(1,g.z/n)))*57.3;       // 0° = スマホが本棚と平行に立っている
+  let rot=Math.atan2(g.x,g.y)*57.3;rot=((rot%90)+90+45)%90-45;        // 縦・横どちらでも、まっすぐからのずれ
+  tilt={pitch,rot};
+}
+function vidMap(){const v=$('#video'),vw=v.videoWidth,vh=v.videoHeight,s=Math.max(innerWidth/vw,innerHeight/vh);return {s,ox:(innerWidth-vw*s)/2,oy:(innerHeight-vh*s)/2}}
+function frameInVideo(){const r=frameRect(),m=vidMap(),f=(x,y)=>[(x-m.ox)/m.s,(y-m.oy)/m.s];return [f(r.x,r.y),f(r.x+r.w,r.y),f(r.x+r.w,r.y+r.h),f(r.x,r.y+r.h)]}
+
+// 枠の上の線・下の線の位置に、横一直線のくっきりした境目（棚板やわくのふち）があるかを調べる
+function probeEdges(v){
+  const q=frameInVideo(),PW=320,k=PW/v.videoWidth,PH=Math.round(v.videoHeight*k);
+  probe.width=PW;probe.height=PH;pctx.drawImage(v,0,0,PW,PH);
+  const d=pctx.getImageData(0,0,PW,PH).data,Lm=(x,y)=>{const i=(y*PW+x)*4;return d[i]*.3+d[i+1]*.59+d[i+2]*.11};
+  const x0=Math.max(1,Math.round(q[0][0]*k)),x1=Math.min(PW-2,Math.round(q[1][0]*k)),y0=Math.round(q[0][1]*k),y1=Math.round(q[3][1]*k);
+  if(x1-x0<20||y1-y0<10)return false;
+  const rg=y=>{if(y<1||y>=PH-1)return 0;let s=0,n=0;for(let x=x0;x<=x1;x+=2){s+=Math.abs(Lm(x,y+1)-Lm(x,y-1));n++}return s/n};
+  let base=0,bn=0;for(let y=y0+4;y<y1-4;y+=3){base+=rg(y);bn++}base/=Math.max(1,bn);
+  const band=Math.max(3,Math.round((y1-y0)*.06)),best=yc=>{let m=0;for(let y=yc-band;y<=yc+band;y++)m=Math.max(m,rg(y));return m};
+  const thr=Math.max(9,base*1.8);
+  return best(y0)>thr&&best(y1)>thr;
+}
+function loop(t){
+  raf=requestAnimationFrame(loop);
+  const v=$('#video');if(!v.videoWidth)return;
+  if(t-lastProbe>180){lastProbe=t;try{edgeOK=probeEdges(v)}catch(e){edgeOK=false}}
+  const cam=$('#cam');let lvl=null;
+  if(tilt){
+    lvl=Math.abs(tilt.pitch)<4&&Math.abs(tilt.rot)<3;
+    const cl=a=>Math.max(-24,Math.min(24,a*3));
+    $('#bubble').style.transform=`translate(${cl(tilt.rot)}px,${cl(-tilt.pitch)}px)`;
+    $('#levelTxt').textContent=`傾き ${Math.abs(tilt.rot).toFixed(0)}° ・ 前後 ${Math.abs(tilt.pitch).toFixed(0)}°`;
+  }else $('#levelTxt').textContent='傾きセンサーなし';
+  cam.classList.toggle('level-ok',lvl===true);
+  const ready=edgeOK&&lvl!==false;
+  cam.classList.toggle('ready',ready);cam.classList.toggle('tilted',lvl===false);
+  const fit=S.phase==='all'?'本棚の外側のわくを、枠に合わせてください':'棚板の上と下を、枠の線に合わせてください';
+  $('#msg').textContent=lvl===false?'スマホをまっすぐに（緑の丸を真ん中へ）':!edgeOK?fit:'そのまま動かさないで…';
+  if(ready){if(!holdStart)holdStart=t;const p=Math.min(1,(t-holdStart)/900);$('#holdArc').setAttribute('stroke-dasharray',`${p*214} 214`);if(p>=1){holdStart=0;capture()}}
+  else{holdStart=0;$('#holdArc').setAttribute('stroke-dasharray','0 214')}
+}
+function capture(){
+  const v=$('#video');if(!v.videoWidth)return;
+  const q=frameInVideo(),c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);
+  const f=$('#flash');f.style.transition='none';f.style.opacity='1';requestAnimationFrame(()=>{f.style.transition='';f.style.opacity='0'});
+  stopCam();
+  const k=setSource(c,c.width,c.height);
+  S.quad=q.map(([x,y])=>[Math.max(0,Math.min(S.src.width,x*k)),Math.max(0,Math.min(S.src.height,y*k))]);
+  S.ppm=null;
+  setTimeout(makeResult,30);   // 枠つきカメラなら、枠＝四すみなので合わせ直しはなし
+}
+
+/* ---------- 四すみ合わせ（カメラ画面が使えないときだけ） ---------- */
+let adjScale=1,drag=-1;
+function openAdjust(){
+  const w=S.src.width,h=S.src.height,a=aspect();let fw=w*.9,fh=fw/a;if(fh>h*.9){fh=h*.9;fw=fh*a}
+  const x=(w-fw)/2,y=(h-fh)/2;S.quad=[[x,y],[x+fw,y],[x+fw,y+fh],[x,y+fh]];
+  $('#adjTitle').textContent=S.phase==='all'?'四すみを、本棚の外側の角に合わせてください':'四すみを、段の内側の角に合わせてください';
+  show('adj');drawAdjust();
+}
+function drawAdjust(){
+  const st=$('#stage'),cw=st.clientWidth-16,ch=st.clientHeight-16,w=S.src.width,h=S.src.height;
+  adjScale=Math.min(cw/w,ch/h);const dw=Math.round(w*adjScale),dh=Math.round(h*adjScale),dpr=devicePixelRatio||1;
+  const cv=$('#adjCv');cv.width=dw*dpr;cv.height=dh*dpr;cv.style.width=dw+'px';cv.style.height=dh+'px';
+  cv.getContext('2d').drawImage(S.src,0,0,cv.width,cv.height);
+  $('#adjSvg').setAttribute('viewBox',`0 0 ${dw} ${dh}`);$('#adjSvg').setAttribute('width',dw);$('#adjSvg').setAttribute('height',dh);
+  drawHandles();
+}
+function drawHandles(){
+  const p=S.quad.map(([x,y])=>[x*adjScale,y*adjScale]);
+  $('#adjSvg').innerHTML=`<polygon points="${p.map(a=>a.join(',')).join(' ')}"/>`+p.map(([x,y],i)=>`<circle class="hd" cx="${x}" cy="${y}" r="11"/><circle class="hit" data-i="${i}" cx="${x}" cy="${y}" r="28"/>`).join('');
+}
+$('#adjSvg').addEventListener('pointerdown',e=>{const i=e.target.dataset&&e.target.dataset.i;if(i==null)return;drag=+i;$('#adjSvg').setPointerCapture(e.pointerId);moveHandle(e)});
+$('#adjSvg').addEventListener('pointermove',e=>{if(drag>=0)moveHandle(e)});
+const endDrag=()=>{drag=-1;$('#loupe').hidden=true};
+$('#adjSvg').addEventListener('pointerup',endDrag);$('#adjSvg').addEventListener('pointercancel',endDrag);
+function moveHandle(e){
+  const r=$('#adjCv').getBoundingClientRect();
+  const x=Math.max(0,Math.min(S.src.width,(e.clientX-r.left)/adjScale)),y=Math.max(0,Math.min(S.src.height,(e.clientY-r.top)/adjScale));
+  S.quad[drag]=[x,y];drawHandles();
+  // 指で隠れる角を、拡大して見せる
+  const lp=$('#loupe'),lx=lp.getContext('2d'),src=128/(adjScale*3.2);
+  lp.hidden=false;lp.style.left=(e.clientX<innerWidth/2?innerWidth-144:8)+'px';
+  lx.fillStyle='#000';lx.fillRect(0,0,128,128);lx.drawImage(S.src,x-src/2,y-src/2,src,src,0,0,128,128);
+  lx.strokeStyle='#F2CF1D';lx.lineWidth=1;lx.beginPath();lx.moveTo(64,0);lx.lineTo(64,128);lx.moveTo(0,64);lx.lineTo(128,64);lx.stroke();
+}
+$('#adjGo').onclick=()=>{$('#adjGo').textContent='切り出し中…';setTimeout(()=>{try{makeResult()}finally{$('#adjGo').textContent='次へ'}},30)};
+
+/* ---------- ゆがみ直し ---------- */
+function solve(A,b){const n=b.length,M=A.map((r,i)=>[...r,b[i]]);
+  for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;[M[c],M[p]]=[M[p],M[c]];
+    for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c]/M[c][c];for(let k=c;k<=n;k++)M[r][k]-=f*M[c][k]}}
+  return M.map((r,i)=>r[n]/r[i])}
+function homography(from,to){const A=[],b=[];for(let i=0;i<4;i++){const [x,y]=from[i],[u,v]=to[i];
+  A.push([x,y,1,0,0,0,-u*x,-u*y]);b.push(u);A.push([0,0,0,x,y,1,-v*x,-v*y]);b.push(v)}return [...solve(A,b),1]}
+function rectify(q,W,H){
+  const h=homography([[0,0],[W,0],[W,H],[0,H]],q),src=S.srcData,sw=src.width,sh=src.height,sd=src.data,out=new ImageData(W,H),od=out.data;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const X=x+.5,Y=y+.5,z=h[6]*X+h[7]*Y+1;
+    let u=(h[0]*X+h[1]*Y+h[2])/z-.5,v=(h[3]*X+h[4]*Y+h[5])/z-.5;
+    u=Math.max(0,Math.min(sw-1.001,u));v=Math.max(0,Math.min(sh-1.001,v));
+    const x0=u|0,y0=v|0,fx=u-x0,fy=v-y0,i=(y0*sw+x0)*4,j=i+sw*4,o=(y*W+x)*4;
+    for(let c=0;c<3;c++)od[o+c]=(sd[i+c]*(1-fx)+sd[i+4+c]*fx)*(1-fy)+(sd[j+c]*(1-fx)+sd[j+4+c]*fx)*fy;
+    od[o+3]=255;
+  }
+  return out;
+}
+
+/* ---------- 写真から読み取る ---------- */
+// 本と本の境目は「上から下まで続く縦の線」。列ごとに、縦にどれだけ続いているかを数える
+function detect(img,sens){
+  const W=img.width,H=img.height,d=img.data,y0=Math.round(H*.35),y1=Math.round(H*.92),thr=62-sens*4,rows=Math.ceil((y1-y0)/2);
+  const sc=new Float32Array(W);
+  for(let x=1;x<W-1;x++){let n=0;for(let y=y0;y<y1;y+=2){const i=(y*W+x)*4;if(Math.abs(d[i-4]-d[i+4])+Math.abs(d[i-3]-d[i+5])+Math.abs(d[i-2]-d[i+6])>thr)n++}sc[x]=n/rows}
+  const s2=new Float32Array(W);for(let x=1;x<W-1;x++)s2[x]=(sc[x-1]+2*sc[x]+sc[x+1])/4;
+  const minS=.56-sens*.035,gap=5*PXMM,edge=3*PXMM,cand=[];
+  for(let x=edge;x<W-edge;x++)if(s2[x]>=minS)cand.push(x);
+  cand.sort((a,b)=>s2[b]-s2[a]);
+  const keep=[];for(const x of cand)if(keep.every(k=>Math.abs(k-x)>=gap))keep.push(x);
+  return keep.sort((a,b)=>a-b);
+}
+// 棚板は「左から右まで続く横の線」。行ごとに、横にどれだけ続いているかを数えて段の数を出す
+function countRows(img){
+  const {width:W,height:H,data:d}=img,off=W*4*3,prof=new Float32Array(H);
+  for(let y=4;y<H-4;y++){let n=0,c=0;for(let x=Math.round(W*.08);x<W*.92;x+=3){const i=(y*W+x)*4;
+    if(Math.abs(d[i-off]+d[i-off+1]+d[i-off+2]-d[i+off]-d[i+off+1]-d[i+off+2])>60)n++;c++}prof[y]=n/c}
+  const cand=[];for(let y=Math.round(H*.06);y<H*.94;y++)if(prof[y]>.6)cand.push(y);
+  cand.sort((a,b)=>prof[b]-prof[a]);
+  const keep=[];for(const y of cand)if(keep.every(k=>Math.abs(k-y)>=H*.08))keep.push(y);
+  return Math.max(1,Math.min(10,keep.length+1));
+}
+function avgColor(img,pick){const {width:W,height:H,data:d}=img;let r=0,g=0,b=0,n=0;for(let y=0;y<H;y+=3)for(let x=0;x<W;x+=3)if(pick(x,y)){const i=(y*W+x)*4;r+=d[i];g+=d[i+1];b+=d[i+2];n++}n=n||1;return `rgb(${r/n|0},${g/n|0},${b/n|0})`}
+
+/* ---------- 結果 ---------- */
+function makeResult(){
+  const q=S.quad,len=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+  const hw=(len(q[0],q[1])+len(q[3],q[2]))/2,hh=(len(q[0],q[3])+len(q[1],q[2]))/2;
+  show('res');
+  if(S.phase==='all'){
+    const W=900,H=Math.round(W*hh/hw),img=rectify(q,W,H),cv=$('#allCv');cv.width=W;cv.height=H;cv.getContext('2d').putImageData(img,0,0);
+    S.whole={rows:countRows(img),colors:{
+      frame:avgColor(img,(x,y)=>x<W*.025||x>W*.975||y<H*.012||y>H*.988),
+      inner:avgColor(img,(x,y)=>x>W*.1&&x<W*.9&&y>H*.035&&y<H*.06)}};
+    $('#resTitle').textContent='本棚全体';$('#resInfo').textContent='ゆがみを直した写真と、そこから読み取った本棚です。';
+    $('#allTools').hidden=false;$('#rowTools').hidden=true;
+    $('#okBtn').textContent='これでOK。1段目を撮る';
+    drawWholePreview();
+  }else{
+    const hmm=Math.round(ROW_W*hh/hw),W=ROW_W*PXMM,H=hmm*PXMM,img=rectify(q,W,H);
+    S.cur={img,hmm,bounds:detect(img,+$('#sens').value)};
+    const cv=$('#resCv');cv.width=W;cv.height=H;cv.getContext('2d').putImageData(img,0,0);
+    $('#resSvg').setAttribute('viewBox',`0 0 ${W} ${H}`);
+    $('#resTitle').textContent=`${nextRow()}段目`;
+    $('#resInfo').textContent=`この段の高さ 約${(hmm/10).toFixed(1)}cm ・ 写真の細かさ 1mmあたり約${(hw/ROW_W).toFixed(1)}px（${hw/ROW_W>=4?'くっきり':hw/ROW_W>=2.5?'まあまあ':'粗め。もっと近づいて'}）`;
+    $('#allTools').hidden=true;$('#rowTools').hidden=false;
+    $('#zoomBox').classList.remove('big');$('#zoomBtn').textContent='拡大して見る';
+    $('#okBtn').textContent=nextRow()<S.rowsTotal?`並べて、${nextRow()+1}段目へ`:'並べて、できあがり';
+    drawBounds();
+  }
+}
+function drawWholePreview(){
+  $('#rCount').textContent=S.whole.rows+'段';
+  S.rowsTotal=S.whole.rows;S.colors=S.whole.colors;renderShelf('#shelfPreview');
+}
+$('#rMinus').onclick=()=>{if(S.whole.rows>1){S.whole.rows--;drawWholePreview()}};
+$('#rPlus').onclick=()=>{if(S.whole.rows<10){S.whole.rows++;drawWholePreview()}};
+function drawBounds(){
+  const {img,bounds}=S.cur,H=img.height,W=img.width;
+  $('#resSvg').innerHTML=bounds.map(x=>`<line x1="${x}" y1="0" x2="${x}" y2="${H}"/>`).join('');
+  const segs=[0,...bounds,W],ws=[];for(let i=1;i<segs.length;i++)ws.push((segs[i]-segs[i-1])/PXMM);
+  $('#cnt').textContent=`${ws.length}冊`;
+}
+$('#sens').oninput=()=>{if(S.cur){S.cur.bounds=detect(S.cur.img,+$('#sens').value);drawBounds()}};
+$('#resSvg').addEventListener('click',e=>{
+  const r=$('#resSvg').getBoundingClientRect(),W=S.cur.img.width,x=Math.round((e.clientX-r.left)/r.width*W),b=S.cur.bounds;
+  const near=b.findIndex(v=>Math.abs(v-x)<3*PXMM);
+  if(near>=0)b.splice(near,1);else{b.push(x);b.sort((a,c)=>a-c)}
+  drawBounds();
+});
+$('#zoomBtn').onclick=e=>{const z=$('#zoomBox').classList.toggle('big');e.target.textContent=z?'全体を見る':'拡大して見る'};
+$('#retakeBtn').onclick=()=>{renderHome();show('home');$('#goBtn').click()};
+$('#okBtn').onclick=()=>{
+  if(S.phase==='all'){S.phase='row'}
+  else{
+    const {img,bounds,hmm}=S.cur,segs=[0,...bounds,img.width],src=document.createElement('canvas');
+    src.width=img.width;src.height=img.height;src.getContext('2d').putImageData(img,0,0);
+    const books=[];for(let i=1;i<segs.length;i++)books.push([segs[i-1],segs[i]]);
+    S.rows.push({src,books,hmm,W:img.width});
+    if(S.rows.length>=S.rowsTotal)S.phase='done';
+  }
+  renderHome();show('home');
+};
+function renderShelf(sel){
+  const box=$(sel);box.innerHTML='';
+  if(S.colors){box.style.setProperty('--frame',S.colors.frame);box.style.setProperty('--inner',S.colors.inner)}
+  for(let i=0;i<S.rowsTotal;i++){
+    const r=S.rows[i],row=document.createElement('div');row.className='srow';
+    if(r){
+      row.style.aspectRatio=`${ROW_W} / ${r.hmm}`;
+      for(const [a,b] of r.books){
+        const sp=document.createElement('div');sp.className='sp';sp.style.width=`calc(${(b-a)/r.W*100}% - 1px)`;
+        const c=document.createElement('canvas'),w=Math.max(1,Math.round((b-a)/2)),h=Math.round(r.src.height/2);c.width=w;c.height=h;
+        c.getContext('2d').drawImage(r.src,a,0,b-a,r.src.height,0,0,w,h);sp.appendChild(c);row.appendChild(sp);
+      }
+    }else{
+      if(i===S.rows.length&&S.phase==='row')row.classList.add('next');
+      row.innerHTML=`<span class="lbl">${i+1}段目</span>`;
+    }
+    box.appendChild(row);
+  }
+}
+renderHome();
+</script>
+</body>
+</html>
