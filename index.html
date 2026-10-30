@@ -94,6 +94,22 @@ input[type=range]{width:100%;accent-color:var(--yellow)}
 .sp{position:relative;height:100%;flex:none;margin-right:1px}
 .sp canvas{display:block;width:100%;height:100%}
 .sp::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.22),rgba(255,255,255,.12) 30%,rgba(255,255,255,0) 60%,rgba(0,0,0,.2));pointer-events:none}
+.sp{transition:filter .25s}
+.sp.scan{filter:brightness(1.7)}
+.sp.unk{outline:2px dashed var(--yellow);outline-offset:-2px}
+.sp.unk::before{content:"?";position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1;background:var(--yellow);color:#1b1a12;font-size:10px;font-weight:700;border-radius:999px;width:14px;height:14px;line-height:14px;text-align:center}
+.tap .sp{cursor:pointer}
+
+/* 撮り終えたあと */
+.tally{display:flex;gap:8px}
+.tally div{flex:1;background:#2a2c26;border-radius:10px;padding:8px 12px}
+.tally b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+#sheet{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:30;display:flex;align-items:flex-end;justify-content:center}
+.sheetIn{width:min(720px,100%);background:var(--panel);border-top:1px solid var(--line);border-radius:16px 16px 0 0;padding:16px max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 16px) max(16px,env(safe-area-inset-left,0px));display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start}
+#spCv{display:block;height:min(42vh,300px);width:auto;max-width:30vw;border-radius:2px;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+.sheetTxt{display:flex;flex-direction:column;gap:12px;min-width:0}
+.badge{align-self:flex-start;font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;background:#2a2c26}
+.badge.unk{background:var(--yellow);color:#1b1a12}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -169,7 +185,29 @@ input[type=range]{width:100%;accent-color:var(--yellow)}
   </div>
 </main>
 
+<main id="fin" class="wrap" hidden>
+  <div style="display:flex;flex-direction:column;gap:4px">
+    <h1 id="finTitle"></h1>
+    <p class="mute" id="finInfo"></p>
+  </div>
+  <div class="tally" id="tally" hidden><div><span class="mute">わかった本</span><b id="tOk"></b></div><div><span class="mute">わからなかった本</span><b id="tNg"></b></div></div>
+  <div class="shelf tap" id="shelfFin"></div>
+  <p id="finHint"></p>
+  <div class="btns" id="finBtns" hidden><button type="button" class="main" id="finOk"></button></div>
+  <p class="mute">試作なので、本を調べるところは「まねごと」です。本番では AI が背表紙の文字を読んで、本の名前・作者を出します。</p>
+</main>
+
+<div id="sheet" hidden><div class="sheetIn" role="dialog" aria-modal="true" aria-labelledby="spTitle">
+  <canvas id="spCv"></canvas>
+  <div class="sheetTxt">
+    <span class="badge" id="spBadge"></span>
+    <div><h2 id="spTitle"></h2><p class="mute" id="spSub"></p></div>
+    <div class="btns"><button type="button" class="main" id="spShoot">この本を撮る</button><button type="button" id="spClose">閉じる</button></div>
+  </div>
+</div></div>
+
 <input type="file" id="fCap" accept="image/*" capture="environment" hidden>
+<input type="file" id="fBook" accept="image/*" capture="environment" hidden>
 
 <script>
 const $=s=>document.querySelector(s);
@@ -177,7 +215,7 @@ const ROW_W=560, PXMM=4, MAXSRC=3200;
 // phase: 'all'（本棚全体）→ 'row'（1段ずつ）→ 'done'
 const S={phase:'all',rowsTotal:5,rows:[],colors:null,src:null,srcData:null,quad:null,cur:null,whole:null,noLive:false};
 
-function show(id){for(const s of ['home','cam','adj','res'])$('#'+s).hidden=s!==id;window.scrollTo(0,0)}
+function show(id){for(const s of ['home','cam','adj','res','fin'])$('#'+s).hidden=s!==id;window.scrollTo(0,0)}
 function aspect(){return S.phase==='all'?0.62:ROW_W/236}
 const nextRow=()=>S.rows.length+1;
 
@@ -453,7 +491,7 @@ $('#okBtn').onclick=()=>{
     src.width=img.width;src.height=img.height;src.getContext('2d').putImageData(img,0,0);
     const books=[];for(let i=1;i<segs.length;i++)books.push([segs[i-1],segs[i]]);
     S.rows.push({src,books,hmm,W:img.width});
-    if(S.rows.length>=S.rowsTotal)S.phase='done';
+    if(S.rows.length>=S.rowsTotal){S.phase='done';startFinish();return}
   }
   renderHome();show('home');
 };
@@ -464,11 +502,12 @@ function renderShelf(sel){
     const r=S.rows[i],row=document.createElement('div');row.className='srow';
     if(r){
       row.style.aspectRatio=`${ROW_W} / ${r.hmm}`;
-      for(const [a,b] of r.books){
-        const sp=document.createElement('div');sp.className='sp';sp.style.width=`calc(${(b-a)/r.W*100}% - 1px)`;
+      r.books.forEach(([a,b],j)=>{
+        const sp=document.createElement('div');sp.className='sp';sp.dataset.r=i;sp.dataset.j=j;
+        if(r.info&&r.info[j].unk)sp.classList.add('unk');sp.style.width=`calc(${(b-a)/r.W*100}% - 1px)`;
         const c=document.createElement('canvas'),w=Math.max(1,Math.round((b-a)/2)),h=Math.round(r.src.height/2);c.width=w;c.height=h;
         c.getContext('2d').drawImage(r.src,a,0,b-a,r.src.height,0,0,w,h);sp.appendChild(c);row.appendChild(sp);
-      }
+      });
     }else{
       if(i===S.rows.length&&S.phase==='row')row.classList.add('next');
       row.innerHTML=`<span class="lbl">${i+1}段目</span>`;
@@ -476,6 +515,63 @@ function renderShelf(sel){
     box.appendChild(row);
   }
 }
+/* ---------- 撮り終えたあと：本を調べる → できた本棚 ---------- */
+// 試作では AI の代わりに「まねごと」。だいたい5冊に1冊と、細すぎる本を「わからなかった本」にする
+function startFinish(){
+  for(const [i,r] of S.rows.entries())r.info=r.books.map(([a,b],j)=>({unk:(b-a)/PXMM<6||(j*7+i*3)%5===2}));
+  const all=S.rows.flatMap(r=>r.info),total=all.length;
+  $('#finTitle').textContent='本を調べています…';
+  $('#finInfo').textContent=`${S.rowsTotal}段・${total}冊の背表紙から、1冊ずつ本を探しています。`;
+  $('#tally').hidden=true;$('#finBtns').hidden=true;$('#finHint').textContent='';
+  S.scanning=true;renderShelf('#shelfFin');show('fin');
+  const sps=[...document.querySelectorAll('#shelfFin .sp')];
+  sps.forEach(sp=>sp.classList.remove('unk'));
+  const step=Math.max(25,Math.min(90,2400/sps.length));
+  sps.forEach((sp,k)=>{setTimeout(()=>sp.classList.add('scan'),k*step);setTimeout(()=>sp.classList.remove('scan'),k*step+260)});
+  setTimeout(()=>{S.scanning=false;showFinish()},sps.length*step+400);
+}
+function showFinish(){
+  const all=S.rows.flatMap(r=>r.info),ng=all.filter(x=>x.unk).length;
+  $('#finTitle').textContent=ng?'あと少しで本棚ができます':'本棚ができました';
+  $('#finInfo').textContent=ng?'黄色い点線の本は、背表紙だけではわからなかった本です。タップして、その本だけ撮ってください。':'撮ったときの並びのまま、本物の背表紙で本棚に入ります。本をタップすると中身が見られます。';
+  $('#tOk').textContent=`${all.length-ng}冊`;$('#tNg').textContent=`${ng}冊`;$('#tally').hidden=false;
+  $('#finOk').textContent=ng?`わからない${ng}冊は「仮」のまま、本棚に入れる`:'本棚に入れる';
+  $('#finBtns').hidden=false;$('#finHint').textContent='';
+  renderShelf('#shelfFin');
+}
+let sel=null;
+$('#shelfFin').addEventListener('click',e=>{
+  const sp=e.target.closest('.sp');if(!sp||S.scanning)return;
+  sel={r:+sp.dataset.r,j:+sp.dataset.j};openSheet();
+});
+function openSheet(){
+  const r=S.rows[sel.r],[a,b]=r.books[sel.j],info=r.info[sel.j],c=$('#spCv');
+  c.width=Math.max(1,b-a);c.height=r.src.height;c.getContext('2d').drawImage(r.src,a,0,b-a,r.src.height,0,0,b-a,r.src.height);
+  $('#spBadge').textContent=info.unk?'わからなかった本':info.shot?'撮って見つけた本':'背表紙から見つけた本';
+  $('#spBadge').className='badge'+(info.unk?' unk':'');
+  $('#spTitle').textContent=info.unk?'この本は何の本？':'（本の名前）';
+  $('#spSub').textContent=info.unk
+    ?'背表紙の字が小さい・かすれている本は、表紙かバーコードを撮ると見つかります。'
+    :`${sel.r+1}段目・左から${sel.j+1}冊目 ・ 幅 約${((b-a)/PXMM/10).toFixed(1)}cm。本番ではここに本の名前・作者・表紙が出ます。`;
+  $('#spShoot').hidden=!info.unk;
+  $('#sheet').hidden=false;
+}
+$('#spClose').onclick=()=>{$('#sheet').hidden=true};
+$('#sheet').addEventListener('click',e=>{if(e.target.id==='sheet')$('#sheet').hidden=true});
+$('#spShoot').onclick=()=>$('#fBook').click();
+$('#fBook').onchange=e=>{
+  const f=e.target.files[0];e.target.value='';if(!f||!sel)return;
+  Object.assign(S.rows[sel.r].info[sel.j],{unk:false,shot:true});
+  $('#sheet').hidden=true;showFinish();
+  $('#finHint').textContent='撮った写真から、本が見つかりました（試作なので、まねごとです）。';
+};
+$('#finOk').onclick=()=>{
+  const all=S.rows.flatMap(r=>r.info),ng=all.filter(x=>x.unk).length;
+  $('#finTitle').textContent='本棚ができました';
+  $('#finInfo').textContent=`${S.rowsTotal}段・${all.length}冊。`+(ng?`「仮」の${ng}冊は、あとからタップして撮れば入れ替わります。`:'')+'本番ではこのあと、アプリの本棚（部屋に置く・本の記録をつける など）に入ります。';
+  $('#tally').hidden=true;$('#finBtns').hidden=true;$('#finHint').textContent='';
+  window.scrollTo(0,0);
+};
 renderHome();
 </script>
 </body>
